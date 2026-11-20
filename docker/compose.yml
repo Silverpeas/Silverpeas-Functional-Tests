@@ -1,0 +1,66 @@
+# Environment of the Silverpeas functional tests: Silverpeas, its PostgreSQL database initialized
+# from the dataset dump, and Mailpit to catch all the emails sent by Silverpeas.
+# The parameters are defined in the .env file (see .env.example).
+name: ${COMPOSE_PROJECT_NAME:-silverpeas-ft}
+
+services:
+  silverpeas:
+    build:
+      context: .
+      args:
+        SILVERPEAS_IMAGE: ${SILVERPEAS_IMAGE:-silverpeas-run:latest}
+    image: silverpeas-ft:latest
+    depends_on:
+      database:
+        condition: service_healthy
+      mailpit:
+        condition: service_started
+    environment:
+      SILVERPEAS_VERSION: ${SILVERPEAS_VERSION:-6.5-SNAPSHOT}
+      FORCE_UPGRADE: ${FORCE_UPGRADE:-false}
+      SILVERPEAS_DEBUG: ${SILVERPEAS_DEBUG:-false}
+    ports:
+      - "${HTTP_PORT:-8380}:8000"
+      - "${DEBUG_PORT:-5305}:5005"
+    volumes:
+      - ./config.properties:/home/silveruser/silverpeas/configuration/config.properties:ro
+      # overrides the one of silverpeas-run, not up to date with master (no more Aurora skin)
+      - ./CustomerSettings.xml:/home/silveruser/silverpeas/configuration/silverpeas/CustomerSettings.xml:ro
+      - silverpeas-data:/home/silveruser/silverpeas/data
+      - gradle-cache:/home/silveruser/.gradle
+      # local Maven repository of the host: gives access to the Silverpeas artifacts built locally
+      - ${MAVEN_REPOSITORY:-${HOME}/.m2/repository}:/home/silveruser/.m2/repository:ro
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "-o", "/dev/null", "http://localhost:8000/silverpeas/defaultLogin.jsp"]
+      interval: 15s
+      timeout: 10s
+      retries: 5
+      # time allowed to upgrade and to start Silverpeas
+      start_period: 15m
+      start_interval: 10s
+    stop_grace_period: 2m
+
+  database:
+    image: postgres:${POSTGRES_VERSION:-16}
+    environment:
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - postgresql-data:/var/lib/postgresql/data
+      # executed in alphabetical order at the database initialization only (empty volume)
+      - ./dataset/silverpeas.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./dataset/z-test-credentials.sql:/docker-entrypoint-initdb.d/z-test-credentials.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U silverpeas -d silverpeas"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+
+  mailpit:
+    image: axllent/mailpit:${MAILPIT_VERSION:-v1.27}
+    ports:
+      - "${MAILPIT_PORT:-8325}:8025"
+
+volumes:
+  silverpeas-data:
+  postgresql-data:
+  gradle-cache:

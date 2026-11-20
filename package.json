@@ -1,0 +1,24 @@
+{
+  "name": "silverpeas-functional-tests",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Functional tests of Silverpeas with Playwright",
+  "license": "AGPL-3.0-or-later",
+  "scripts": {
+    "env:up": "./scripts/env-up.sh",
+    "env:down": "./scripts/env-down.sh",
+    "env:reset": "./scripts/env-reset.sh",
+    "env:redeploy": "./scripts/env-redeploy.sh",
+    "test": "playwright test",
+    "test:smoke": "playwright test --grep @smoke",
+    "test:bugs": "playwright test tests/bugs",
+    "test:ui": "playwright test --ui",
+    "report": "playwright show-report",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.65.1",
+    "@types/node": "24.19.2",
+    "typescript": "7.0.2"
+  }
+}
