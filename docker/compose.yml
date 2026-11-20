@@ -27,6 +27,8 @@ services:
       # overrides the one of silverpeas-run, not up to date with master (no more Aurora skin)
       - ./CustomerSettings.xml:/home/silveruser/silverpeas/configuration/silverpeas/CustomerSettings.xml:ro
       - silverpeas-data:/home/silveruser/silverpeas/data
+      # indexes matching the dataset, installed at the first start with a new data volume
+      - ${DATASET_INDEX:-./dataset/index}:/home/silveruser/dataset/index:ro
       - gradle-cache:/home/silveruser/.gradle
       # local Maven repository of the host: gives access to the Silverpeas artifacts built locally
       - ${MAVEN_REPOSITORY:-${HOME}/.m2/repository}:/home/silveruser/.m2/repository:ro
@@ -47,7 +49,7 @@ services:
     volumes:
       - postgresql-data:/var/lib/postgresql/data
       # executed in alphabetical order at the database initialization only (empty volume)
-      - ./dataset/silverpeas.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ${DATASET_DUMP:-./dataset/silverpeas.sql}:/docker-entrypoint-initdb.d/init.sql:ro
       - ./dataset/z-test-credentials.sql:/docker-entrypoint-initdb.d/z-test-credentials.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -h 127.0.0.1 -U silverpeas -d silverpeas"]
@@ -63,4 +65,8 @@ services:
 volumes:
   silverpeas-data:
   postgresql-data:
+  # shared by all the environments (see scripts/rebuild-index.sh) and kept when they are removed:
+  # created by the scripts (see scripts/common.sh)
   gradle-cache:
+    name: silverpeas-ft-gradle-cache
+    external: true

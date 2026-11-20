@@ -8,6 +8,9 @@ if [ ! -f "${DOCKER_DIR}/.env" ]; then
   cp "${DOCKER_DIR}/.env.example" "${DOCKER_DIR}/.env"
 fi
 
+# Gradle cache shared by all the environments (declared as external in compose.yml)
+docker volume create silverpeas-ft-gradle-cache > /dev/null
+
 compose() {
   docker compose --project-directory "${DOCKER_DIR}" -f "${DOCKER_DIR}/compose.yml" "$@"
 }

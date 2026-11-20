@@ -31,6 +31,8 @@ export class PortalPage {
   async goto(): Promise<void> {
     await this.page.goto('/silverpeas/look/jsp/MainFrame.jsp');
     await expect(this.mainMenu).toBeVisible();
+    // the behaviours of the top bar (search, menus...) are set once the page is fully loaded
+    await this.page.waitForLoadState('load');
   }
 
   /** Opens from the main menu the space with the given name. */
@@ -52,9 +54,13 @@ export class PortalPage {
 
   /** Searches in the whole platform with the given query; the results are in the content part. */
   async search(query: string): Promise<SearchResults> {
-    await this.searchInput.fill(query);
-    await this.searchInput.press('Enter');
     const results = new SearchResults(this.content);
+    // the key Enter is handled by a script of the top bar that can be not yet ready
+    await expect(async () => {
+      await this.searchInput.fill(query);
+      await this.searchInput.press('Enter');
+      await expect(results.frame.locator('#query')).toHaveValue(query, { timeout: 2_000 });
+    }).toPass({ timeout: 15_000 });
     await expect(results.summary).toBeVisible();
     return results;
   }

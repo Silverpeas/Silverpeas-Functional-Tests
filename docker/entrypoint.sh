@@ -51,13 +51,19 @@ need_upgrade() {
 
 trap stop_silverpeas SIGTERM SIGINT SIGQUIT
 
-# At the first start with a new data volume, removes the indexes of the dataset: they are in a
-# Lucene format too old for the current Silverpeas version and then no indexing can be done.
-# Silverpeas creates them again (only the contents created by the tests are then indexed).
+# At the first start with a new data volume, replaces the indexes of the dataset of the base image
+# by the ones of the functional tests dataset (DATASET_INDEX_DIR, mounted from docker/dataset/index):
+# they match the database dump of the dataset and they are in the Lucene format of the tested version.
 readonly DATA_MARKER="${SILVERPEAS_HOME}/data/.functional-tests-initialized"
+readonly DATASET_INDEX_DIR="${DATASET_INDEX_DIR:-/home/silveruser/dataset/index}"
 if [ ! -f "${DATA_MARKER}" ]; then
-  log "First start with the dataset: remove its obsolete indexes"
   rm -rf "${SILVERPEAS_HOME}/data/index"
+  if [ -d "${DATASET_INDEX_DIR}" ]; then
+    log "First start with the dataset: install its indexes"
+    cp -r "${DATASET_INDEX_DIR}" "${SILVERPEAS_HOME}/data/index"
+  else
+    log "First start with the dataset: no indexes for it, they will be rebuilt from scratch"
+  fi
   touch "${DATA_MARKER}"
 fi
 
