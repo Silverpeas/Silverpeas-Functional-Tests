@@ -150,7 +150,7 @@ In case of failure, the screenshot, the video and the Playwright trace of the te
 | `tests/smoke/authentication.spec.ts`         | sign in, wrong password, anonymous access              |
 | `tests/smoke/navigation.spec.ts`             | home page, opening an application of a space, sign out |
 | `tests/smoke/search.spec.ts`                 | search of a publication of the dataset                 |
-| `tests/features/kmelia/publication.spec.ts`  | publication with an attachment consulted by a reader, draft not visible by the readers, search of a new publication, notification of a user by email |
+| `tests/apps/kmelia/publication.spec.ts`      | publication with an attachment consulted by a reader, draft not visible by the readers, search of a new publication, notification of a user by email |
 
 ## Fixing a bug with a test
 
@@ -191,6 +191,7 @@ docker/            the test environment (Docker Compose) and its dataset (datase
 scripts/           scripts to manage the test environment and to rebuild the indexes
 support/           test support: users, fixtures, global setup, Mailpit client, page objects (pages/)
 tests/smoke/       smoke tests (tag @smoke)
-tests/features/    tests per Silverpeas application (tag @smoke for the essential ones)
+tests/apps/        tests per Silverpeas application (component), in a folder named after it
+                   (e.g. kmelia/); tag @smoke for the essential ones
 tests/bugs/        a test per bug (tag @bug<ticket>), see tests/bugs/README.md
 ```
