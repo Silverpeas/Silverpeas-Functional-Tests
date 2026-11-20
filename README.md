@@ -59,12 +59,26 @@ is updated, rebuild the `silverpeas-run` image and update `SILVERPEAS_IMAGE` in 
 * `docker/config.properties`: global configuration of Silverpeas (database, SMTP → Mailpit, ...).
 * `docker/CustomerSettings.xml`: customization of the Silverpeas settings.
 * `docker/dataset/silverpeas.sql`: the database dump of the dataset (from `silverpeas-run`).
-* `docker/dataset/z-test-credentials.sql`: sets well-known passwords to the users of the dataset.
+* `docker/dataset/z-test-credentials.sql`: sets well-known passwords to the users of the dataset:
+  `SilverAdmin` for `SilverAdmin`, `silverpeas` for all the other users.
 
-| User          | Domain           | Password      | Role in the tests             |
-|---------------|------------------|---------------|-------------------------------|
-| `SilverAdmin` | Silverpeas (0)   | `SilverAdmin` | administrator (`adminPage`)   |
-| `jdoo1`…`jdoo45` | Snowpeas (1)  | `silverpeas`  | `jdoo3` is the default user (`page`) |
+At the first start with a new data volume, the container removes the Lucene indexes of the
+dataset: they are in a format too old for master and they prevent any indexing. Hence only the
+contents created by the tests can be found by the search engine.
+
+### Users of the tests
+
+Each role is played by a pool of users of the dataset, one user per parallel worker, so that a same
+user is never signed in by two tests at the same time (see `support/users.ts`):
+
+| Role        | Users                                         | Rights                                   |
+|-------------|-----------------------------------------------|------------------------------------------|
+| `admin`     | `SilverAdmin` (domain Silverpeas)             | administrator of the platform            |
+| `publisher` | `cvaldor`, `sorvane`, `tlambrec`, `mquentel`, `npeyrelle` (domain Silverpeas) | group Publieurs: publishers in the Kmelia of the Espace Collaboratif |
+| `writer`    | `jdoo1`, `jdoo10`, `jdoo11`, `jdoo100`, `jdoo101` (domain Snowpeas) | group Rédacteurs |
+| `user`      | `jdoo3` … `jdoo7` (domain Snowpeas)           | group Lecteurs: simple readers           |
+
+Hence, at most 5 workers can be used.
 
 ## Running the tests
 
@@ -84,16 +98,27 @@ The URL of the Silverpeas under test can be changed with `SILVERPEAS_URL` (by de
 ```
 docker/            the test environment (Docker Compose)
 scripts/           scripts to manage the test environment
-support/           test support: users, fixtures, authentication setup, page objects (pages/)
+support/           test support: users, fixtures, Mailpit client, page objects (pages/)
 tests/smoke/       smoke tests (tag @smoke)
-tests/features/    tests per Silverpeas application
+tests/features/    tests per Silverpeas application (tag @smoke for the essential ones)
 tests/bugs/        a test per bug (tag @bug<ticket>), see tests/bugs/README.md
 ```
 
 ## Writing tests
 
-* Import `test` and `expect` from `support/fixtures`: the `page` fixture is already signed in as a
-  simple user, `adminPage` as the administrator.
+* Import `test` and `expect` from `support/fixtures`:
+  * `page` is signed in as a simple reader (`test.use({ signedInAs: 'publisher' })` to change the
+    role, `null` for an anonymous page), `adminPage`, `publisherPage` and `writerPage` are signed
+    in with the corresponding role, each in its own browser context;
+  * `accounts` gives the users playing each role in the test;
+  * `uniqueName` and `uniqueWord` give names unique to the test for the data it creates;
+  * `mailpit` checks the emails sent by Silverpeas.
+* Each page signs in with its own session: Silverpeas binds a security token to the session, so a
+  session can't be shared between tests running in parallel.
+* The applications can be accessed directly by their router (e.g. `/silverpeas/Rkmelia/kmelia1/Main`)
+  or within the portal, where the content part is the `#MyMain` iframe (see `PortalPage`).
+* The tests run with a window of 1280 px wide: the navigation panel of the spaces is then hidden
+  and the applications of a space are in a sub-menu of the main menu.
 * Encapsulate the interactions with a Silverpeas page into a page object in `support/pages/`.
 * A test must not depend on another one nor on the order of execution: it creates its own data
   with unique names (`uniqueName` fixture).

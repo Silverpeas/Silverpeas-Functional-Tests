@@ -1,5 +1,4 @@
 import { defineConfig, devices } from '@playwright/test';
-import { AUTH_DIR, users } from './support/users';
 
 /**
  * URL of the Silverpeas instance under test (without the /silverpeas context).
@@ -9,6 +8,7 @@ const baseURL = process.env.SILVERPEAS_URL ?? `http://localhost:${process.env.HT
 
 export default defineConfig({
   testDir: './tests',
+  globalSetup: './support/global-setup.ts',
   // Silverpeas pages can be slow, mainly at their first access after a startup
   timeout: 60_000,
   expect: { timeout: 10_000 },
@@ -28,19 +28,8 @@ export default defineConfig({
   },
   projects: [
     {
-      // signs in once each user of the tests and saves their session
-      name: 'setup',
-      testDir: './support',
-      testMatch: /auth\.setup\.ts/,
-    },
-    {
       name: 'chromium',
-      dependencies: ['setup'],
-      use: {
-        ...devices['Desktop Chrome'],
-        // by default, the tests are run as a simple user
-        storageState: `${AUTH_DIR}/${users.user.key}.json`,
-      },
+      use: { ...devices['Desktop Chrome'] },
     },
   ],
 });

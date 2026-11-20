@@ -51,6 +51,16 @@ need_upgrade() {
 
 trap stop_silverpeas SIGTERM SIGINT SIGQUIT
 
+# At the first start with a new data volume, removes the indexes of the dataset: they are in a
+# Lucene format too old for the current Silverpeas version and then no indexing can be done.
+# Silverpeas creates them again (only the contents created by the tests are then indexed).
+readonly DATA_MARKER="${SILVERPEAS_HOME}/data/.functional-tests-initialized"
+if [ ! -f "${DATA_MARKER}" ]; then
+  log "First start with the dataset: remove its obsolete indexes"
+  rm -rf "${SILVERPEAS_HOME}/data/index"
+  touch "${DATA_MARKER}"
+fi
+
 if need_upgrade; then
   log "Set the version of Silverpeas to install: ${REQUESTED_VERSION}"
   sed -i -E "s/^version[[:space:]]*=.*/version = '${REQUESTED_VERSION}'/" silverpeas.gradle

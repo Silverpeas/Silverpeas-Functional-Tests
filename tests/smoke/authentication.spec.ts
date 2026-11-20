@@ -1,22 +1,21 @@
 import { expect, test } from '../../support/fixtures';
 import { LoginPage } from '../../support/pages/login-page';
-import { users } from '../../support/users';
 
 test.describe('Authentication', { tag: '@smoke' }, () => {
   // these tests start from an anonymous session
-  test.use({ storageState: { cookies: [], origins: [] } });
+  test.use({ signedInAs: null });
 
-  test('a user signs in with valid credentials', async ({ page }) => {
+  test('a user signs in with valid credentials', async ({ page, accounts }) => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
-    await loginPage.signIn(users.user);
+    await loginPage.signIn(accounts.user);
     await expect(page).toHaveURL(/\/silverpeas\/look\//);
   });
 
-  test('a user cannot sign in with a wrong password', async ({ page }) => {
+  test('a user cannot sign in with a wrong password', async ({ page, accounts }) => {
     const loginPage = new LoginPage(page);
     await loginPage.goto();
-    await loginPage.signIn({ ...users.user, password: 'wrong-password' });
+    await loginPage.signIn({ ...accounts.user, password: 'wrong-password' });
     await expect(page).toHaveURL(/ErrorCode=/);
     await expect(loginPage.login).toBeVisible();
   });
