@@ -11,8 +11,16 @@ fi
 # Gradle cache shared by all the environments (declared as external in compose.yml)
 docker volume create silverpeas-ft-gradle-cache > /dev/null
 
+# Additional Compose files overriding compose.yml (space-separated paths relative to the docker
+# directory), e.g. compose.ci.yml for the continuous integration
+COMPOSE_OVERRIDES=${COMPOSE_OVERRIDES:-}
+
 compose() {
-  docker compose --project-directory "${DOCKER_DIR}" -f "${DOCKER_DIR}/compose.yml" "$@"
+  local files=(-f "${DOCKER_DIR}/compose.yml")
+  for override in ${COMPOSE_OVERRIDES}; do
+    files+=(-f "${DOCKER_DIR}/${override}")
+  done
+  docker compose --project-directory "${DOCKER_DIR}" "${files[@]}" "$@"
 }
 
 # Waits for the Silverpeas service to be healthy. Fails if the container exits or is unhealthy.

@@ -1,0 +1,8 @@
+# Overrides of the environment for the continuous integration (see scripts/ci-run.sh): no port is
+# published on the host, so that several environments can run at the same time on the same host.
+# The tests access the services through the Docker network of the environment.
+services:
+  silverpeas:
+    ports: !reset []
+  mailpit:
+    ports: !reset []

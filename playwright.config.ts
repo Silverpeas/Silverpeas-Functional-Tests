@@ -17,7 +17,10 @@ export default defineConfig({
   workers: process.env.CI ? 2 : 3,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
-  reporter: [['list'], ['html', { open: 'never' }]],
+  // on the continuous integration, a JUnit report is also produced for the CI server
+  reporter: process.env.CI
+    ? [['list'], ['html', { open: 'never' }], ['junit', { outputFile: 'reports/junit.xml' }]]
+    : [['list'], ['html', { open: 'never' }]],
   use: {
     baseURL,
     locale: 'fr-FR',

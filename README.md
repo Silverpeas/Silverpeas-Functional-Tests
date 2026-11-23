@@ -152,6 +152,36 @@ In case of failure, the screenshot, the video and the Playwright trace of the te
 | `tests/smoke/search.spec.ts`                 | search of a publication of the dataset                 |
 | `tests/apps/kmelia/publication.spec.ts`      | publication with an attachment consulted by a reader, draft not visible by the readers, search of a new publication, notification of a user by email |
 
+## Continuous integration
+
+The functional tests are run by the Jenkins pipeline building a build version of Silverpeas
+(project Jenkins-Pipelines, `src/builds/silverpeas/Jenkinsfile`), for the master branch: once
+Silverpeas is built, the tests are run against it and the projects making Silverpeas aren't
+published if any test fails.
+
+The pipeline uses the script `scripts/ci-run.sh`, which can also be used locally to run the tests
+as done by the continuous integration:
+
+```shell
+SILVERPEAS_VERSION=6.5-SNAPSHOT ./scripts/ci-run.sh
+```
+
+It starts a new and isolated environment (`COMPOSE_PROJECT_NAME`, by default `silverpeas-ft-ci`)
+in which no port is published on the host (`docker/compose.ci.yml`), runs the tests with Playwright
+in a container (`mcr.microsoft.com/playwright`, in the version of `@playwright/test`) attached to
+the Docker network of the environment, and then removes the environment. Only Docker is required:
+neither Node.js nor the browsers are needed on the host. The Silverpeas artifacts of the version
+are taken from the Maven repository given by `MAVEN_REPOSITORY` (by default `~/.m2/repository`),
+then from Nexus. The JUnit report and the logs of Silverpeas are written in `reports/`, the HTML
+report in `playwright-report/`.
+
+On Jenkins, the script is run in the build container (image `silverpeas/silverbuild`, which
+provides the Docker client) with the Docker daemon of the host, whose socket is mounted into the
+container. As the paths of the files mounted into the containers of the environment are resolved by
+that daemon, the project and the Maven repository given by `MAVEN_REPOSITORY` have to be at the same
+path in the build container and on the host: the pipeline copies the artifacts of the build version
+of Silverpeas into its workspace for that.
+
 ## Fixing a bug with a test
 
 Each bug is covered by a test in `tests/bugs/`, tagged with the ticket number: written first to
