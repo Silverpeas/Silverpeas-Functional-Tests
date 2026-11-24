@@ -5,7 +5,7 @@
 #
 # When the Silverpeas installer (the silversetup Gradle plugin declared in bin/settings.gradle) is
 # updated, rebuild the silverpeas-run image and then update SILVERPEAS_IMAGE in the .env file.
-ARG SILVERPEAS_IMAGE=silverpeas-run:latest
+ARG SILVERPEAS_IMAGE=silverpeas/silverpeas-run:latest
 FROM ${SILVERPEAS_IMAGE}
 
 USER root
